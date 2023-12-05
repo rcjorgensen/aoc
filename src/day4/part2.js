@@ -28,9 +28,9 @@ function eof() {
   return input[cursor] === undefined;
 }
 
-let sum = 0;
+const cardCounts = {};
 
-while (!eof()) {
+for (let cardNumber = 1; !eof(); cardNumber++) {
   consume(LENGTHS[0]);
 
   const winning = [];
@@ -69,11 +69,32 @@ while (!eof()) {
     }
   }
 
+  console.log(`Card ${cardNumber} has ${winnerCount} matching numbers`);
+
+  if (cardCounts[cardNumber] === undefined) {
+    cardCounts[cardNumber] = 1;
+  }
+
   if (winnerCount > 0) {
-    sum += 2 ** (winnerCount - 1);
+    for (let i = 1; i < winnerCount + 1; i++) {
+      if (cardCounts[cardNumber + i] === undefined) {
+        cardCounts[cardNumber + i] = 1;
+      }
+
+      console.log(
+        `You win ${cardCounts[cardNumber]} extra copy of card ${
+          cardNumber + i
+        }`,
+      );
+      cardCounts[cardNumber + i] += cardCounts[cardNumber];
+    }
   }
 
   consume();
 }
+
+console.dir(cardCounts);
+
+const sum = Object.values(cardCounts).reduce((a, b) => a + b);
 
 console.log(sum);
