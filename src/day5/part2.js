@@ -84,55 +84,108 @@ function readMaps() {
   return maps;
 }
 
-function mapSeed(seed) {
+function findMap(seed) {
   for (let i = 0; i < maps.length; i++) {
-    const [d, s, r] = maps[i];
+    const [, s, r] = maps[i];
 
     if (s <= seed && seed < s + r) {
-      return seed + d - s;
+      return maps[i];
     }
   }
+}
 
-  return seed;
+function mapSeed(seed, range) {
+  let seed0 = seed;
+  let range0 = range;
+
+  const result = [];
+
+  while (range0 > 0) {
+    const map = findMap(seed0);
+
+    if (map === undefined) {
+      console.log(
+        `No map found, mapping seed ${seed0} to ${seed0} and range ${range0} to ${range0}`,
+      );
+      result.push(seed0, range0);
+
+      console.log(`Returning ${result}`);
+      return result;
+    }
+
+    const [d, s, r] = map;
+    console.log(`Found map, mapping seed ${seed0} to ${seed0 + d - s}`);
+    result.push(seed0 + d - s);
+
+    if (seed0 + range0 <= s + r) {
+      console.log(
+        `Seed and range does not need to be split, mapping range ${range0} to ${range0}`,
+      );
+      result.push(range0);
+
+      console.log(`Returning ${result}`);
+      return result;
+    }
+
+    //   seed               seed + range
+    //     |---------------------|
+    //     |----------------|    seed + range - s - r
+    //                      |----|
+    // |--------------------|
+    // s                  s + r
+
+    console.log(
+      `Splitting range into ${s + r - seed} and ${seed + range - s - r}`,
+    );
+    result.push(s + r - seed);
+
+    seed0 = s + r;
+    range0 = seed + range0 - s - r;
+
+    console.log(`New seed: ${seed0}, new range: ${range0}`);
+  }
+
+  console.log(`Returning ${result}`);
+  return result;
 }
 
 function mapSeeds() {
-  for (let i = 0; i < seeds.length; i++) {
-    for (let j = 0; j < seeds[i].length; j++) {
-      seeds[i][j] = mapSeed(seeds[i][j]);
-    }
+  const result = [];
+
+  for (let i = 0; i < seeds.length; i += 2) {
+    result.push(mapSeed(seeds[i], seeds[i + 1]));
   }
+
+  return result.flat();
 }
+
+let seeds = [];
 
 consume(7);
 
-const seeds = [];
-
 while (peek() !== "\n") {
-  const s = readNumber();
+  seeds.push(readNumber());
   consume();
-  const r = readNumber();
-  consume();
-
-  const innerSeeds = [];
-  for (let i = s; i < s + r; i++) {
-    innerSeeds.push(i);
-  }
-
-  seeds.push(innerSeeds);
 }
 
 let maps;
+
+console.dir(seeds);
 
 for (const skip of SKIP_COUNTS) {
   consume(skip);
 
   maps = readMaps();
-
-  console.dir(maps);
-  mapSeeds();
+  seeds = mapSeeds();
 
   console.dir(seeds);
 }
 
-console.log(Math.min(...seeds));
+let min = Infinity;
+for (let i = 0; i < seeds.length; i += 2) {
+  if (seeds[i] < min) {
+    min = seeds[i];
+  }
+}
+
+console.log(min);
